@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blender Refresher — Tabletop & Terrain</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d0f14;
+  --surface: #13161e;
+  --surface2: #1a1e2a;
+  --surface3: #222636;
+  --border: #2a2f42;
+  --accent: #7c6af0;
+  --accent2: #c084fc;
+  --teal: #2dd4bf;
+  --amber: #fbbf24;
+  --red: #f87171;
+  --green: #4ade80;
+  --text: #e2e8f0;
+  --text-dim: #94a3b8;
+  --text-dimmer: #475569;
+  --glow: rgba(124,106,240,0.15);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Serif Display', serif;
+  font-size: 16px;
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+/* Geometric background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 20%, rgba(124,106,240,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(45,212,191,0.04) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 60px 24px 100px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Header */
+.masthead {
+  margin-bottom: 64px;
+  position: relative;
+}
+
+.masthead-eyebrow {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.masthead-eyebrow::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--border), transparent);
+}
+
+h1 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(52px, 8vw, 88px);
+  line-height: 0.9;
+  letter-spacing: 2px;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+h1 .accent { color: var(--accent); }
+h1 .teal { color: var(--teal); }
+
+.masthead-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.8;
+  max-width: 560px;
+  margin-top: 20px;
+}
+
+.masthead-sub strong { color: var(--amber); font-weight: 400; }
+
+/* Section headers */
+.section {
+  margin-bottom: 56px;
+}
+
+.section-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--accent2);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-label::before {
+  content: attr(data-num);
+  background: var(--accent);
+  color: white;
+  font-size: 9px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+h2 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 36px;
+  letter-spacing: 2px;
+  color: var(--text);
+  margin-bottom: 20px;
+  line-height: 1;
+}
+
+.prose {
+  font-family: 'DM Serif Display', serif;
+  font-size: 16px;
+  color: var(--text-dim);
+  line-height: 1.8;
+  margin-bottom: 20px;
+}
+
+.prose strong { color: var(--text); font-weight: 400; }
+.prose em { color: var(--amber); font-style: normal; }
+
+/* Cards */
+.card-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 640px) { .card-grid { grid-template-columns: 1fr; } }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.card:hover::before { opacity: 1; }
+
+.card-icon {
+  font-size: 24px;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.card-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.card-body {
+  font-family: 'DM Serif Display', serif;
+  font-size: 14px;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+/* Shortcut table */
+.shortcut-grid {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.shortcut-header {
+  background: var(--surface2);
+  padding: 12px 20px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--accent);
+  border-bottom: 1px solid var(--border);
+}
+
+.shortcut-row {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+}
+
+.shortcut-row:last-child { border-bottom: none; }
+
+.shortcut-key {
+  padding: 10px 20px;
+  background: var(--surface2);
+  border-right: 1px solid var(--border);
+}
+
+kbd {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  border-bottom: 2px solid var(--text-dimmer);
+  border-radius: 3px;
+  padding: 2px 7px;
+  color: var(--teal);
+  white-space: nowrap;
+}
+
+.shortcut-desc {
+  padding: 10px 20px;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+/* Video cards */
+.video-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.video-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 18px 20px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 16px;
+  align-items: center;
+  text-decoration: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.video-card:hover {
+  border-color: var(--red);
+  background: var(--surface2);
+}
+
+.video-thumb {
+  width: 48px;
+  height: 48px;
+  background: #ff0000;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.video-info {}
+
+.video-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+.video-meta {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-dimmer);
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.video-tag {
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 2px 7px;
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--accent2);
+}
+
+.video-arrow {
+  color: var(--text-dimmer);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+/* Warning / tip boxes */
+.callout {
+  border-radius: 4px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.callout-warn {
+  background: rgba(251,191,36,0.06);
+  border: 1px solid rgba(251,191,36,0.25);
+}
+
+.callout-tip {
+  background: rgba(45,212,191,0.06);
+  border: 1px solid rgba(45,212,191,0.25);
+}
+
+.callout-danger {
+  background: rgba(248,113,113,0.06);
+  border: 1px solid rgba(248,113,113,0.25);
+}
+
+.callout-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+
+.callout-body {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-dim);
+}
+
+.callout-body strong { color: var(--text); font-weight: 500; }
+
+/* Workflow steps */
+.workflow {
+  position: relative;
+  margin-bottom: 24px;
+}
+
+.workflow-step {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 16px;
+  margin-bottom: 0;
+  position: relative;
+}
+
+.workflow-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 23px;
+  top: 48px;
+  bottom: -20px;
+  width: 2px;
+  background: linear-gradient(180deg, var(--accent), transparent);
+}
+
+.workflow-step + .workflow-step { margin-top: 20px; }
+
+.step-num {
+  width: 48px;
+  height: 48px;
+  background: var(--surface2);
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px;
+  color: var(--accent);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.step-content {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 16px 20px;
+}
+
+.step-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--teal);
+  margin-bottom: 6px;
+}
+
+.step-body {
+  font-family: 'DM Serif Display', serif;
+  font-size: 14px;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+.step-body strong { color: var(--text); font-weight: 400; }
+
+/* Checklist */
+.checklist {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.checklist-header {
+  background: var(--surface2);
+  padding: 12px 20px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--teal);
+  border-bottom: 1px solid var(--border);
+}
+
+.check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.check-item:last-child { border-bottom: none; }
+.check-item:hover { background: var(--surface2); }
+.check-item.done { opacity: 0.5; }
+.check-item.done .check-text { text-decoration: line-through; }
+
+.check-box {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border);
+  border-radius: 3px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  font-size: 11px;
+}
+
+.check-item.done .check-box {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: black;
+}
+
+.check-text {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.check-text strong { color: var(--text); font-weight: 500; }
+
+/* Divider */
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+  margin: 48px 0;
+}
+
+/* Channel cards */
+.channel-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 640px) { .channel-grid { grid-template-columns: 1fr; } }
+
+.channel-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 16px;
+  text-align: center;
+  text-decoration: none;
+  display: block;
+  transition: border-color 0.2s;
+}
+
+.channel-card:hover { border-color: var(--accent2); }
+
+.channel-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  margin: 0 auto 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  border: 2px solid var(--border);
+}
+
+.channel-name {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.channel-focus {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dimmer);
+  letter-spacing: 1px;
+}
+
+/* Tag pill */
+.tag {
+  display: inline-block;
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 3px 2px;
+}
+
+/* Animate */
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.section {
+  animation: fadeSlide 0.5s ease both;
+}
+
+.section:nth-child(2) { animation-delay: 0.05s; }
+.section:nth-child(3) { animation-delay: 0.1s; }
+.section:nth-child(4) { animation-delay: 0.15s; }
+.section:nth-child(5) { animation-delay: 0.2s; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="masthead">
+    <div class="masthead-eyebrow" data-num="">Blender for 3D Printing — Personal Field Guide</div>
+    <h1>RETURN<br>TO THE <span class="teal">FORGE</span></h1>
+    <div class="masthead-sub">
+      A refresher built around your background. You took <strong>landscape design</strong> and <strong>character modeling</strong> courses — meaning your spatial instincts and mesh fundamentals are intact. This guide skips what you already know and focuses on what's different when you're designing for <strong>physical output on a K2 Plus</strong>, specifically tabletop terrain and miniatures.
+    </div>
+  </div>
+
+  <!-- SECTION 1: Mindset Shift -->
+  <div class="section">
+    <div class="section-label" data-num="01">Mindset</div>
+    <h2>DESIGNING FOR PHYSICS, NOT PIXELS</h2>
+
+    <p class="prose">
+      Your game design courses optimized for <strong>render engines and game engines</strong> — things like poly count, UV maps, texture baking. For 3D printing, those concerns flip almost entirely. You're now designing for <em>gravity, layer adhesion, and wall strength.</em> The mesh has to exist in the real world.
+    </p>
+
+    <div class="card-grid">
+      <div class="card">
+        <span class="card-icon">🎮</span>
+        <div class="card-title">Game Design Thinking</div>
+        <div class="card-body">Low poly counts. UV unwrapping matters. Normals for lighting. Quads preferred. No volume needed — just visible surface.</div>
+      </div>
+      <div class="card">
+        <span class="card-icon">🖨️</span>
+        <div class="card-title">Print Design Thinking</div>
+        <div class="card-body">Watertight mesh required. Walls must have thickness. Overhangs under 45°. No floating geometry. Volume is everything.</div>
+      </div>
+      <div class="card">
+        <span class="card-icon">🏔️</span>
+        <div class="card-title">Your Landscape Background</div>
+        <div class="card-body">Translates directly to terrain. You already think in ground planes, elevation, organic form. Dungeon floors, rocky outcrops, hills — this is familiar territory.</div>
+      </div>
+      <div class="card">
+        <span class="card-icon">🧙</span>
+        <div class="card-title">Your Character Background</div>
+        <div class="card-body">Translates to minis, creatures, NPCs. The challenge is scale — 28–32mm means details you model at 10× scale need to survive being shrunk. Thin swords snap. Beefy designs survive.</div>
+      </div>
+    </div>
+
+    <div class="callout callout-warn">
+      <div class="callout-icon">⚠️</div>
+      <div class="callout-body"><strong>The single biggest mental shift:</strong> in game design, floating geometry and open meshes are fine. For printing, if your mesh isn't "watertight" — completely sealed with no holes or open edges — your slicer either fails or produces garbage. Every surface must connect to form a closed volume.</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- SECTION 2: Blender Setup -->
+  <div class="section">
+    <div class="section-label" data-num="02">Setup</div>
+    <h2>FIRST THINGS TO CONFIGURE</h2>
+
+    <p class="prose">Before touching a mesh, get Blender configured for physical output. These settings will save you from scale nightmares when you import into your slicer.</p>
+
+    <div class="workflow">
+      <div class="workflow-step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <div class="step-title">Set Units to Millimeters</div>
+          <div class="step-body">Scene Properties (camera icon) → Units → Unit System: <strong>Metric</strong> → Length: <strong>Millimeters</strong> → Unit Scale: <strong>0.001</strong>. This makes 1 Blender unit = 1mm. Without this, your "28mm mini" imports into your slicer at 28 meters.</div>
+        </div>
+      </div>
+      <div class="workflow-step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <div class="step-title">Enable the 3D Print Toolbox Add-on</div>
+          <div class="step-body">Edit → Preferences → Add-ons → search <strong>"3D Print Toolbox"</strong> → enable it. This becomes your pre-flight scanner. Run it before every export — it catches non-manifold edges, thin walls, and overhang problems before they waste a print.</div>
+        </div>
+      </div>
+      <div class="workflow-step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <div class="step-title">Set Overlays: Face Orientation</div>
+          <div class="step-body">In the Viewport Overlays dropdown, enable <strong>Face Orientation</strong>. Blue faces = normals pointing outward (correct). Red faces = normals flipped inward (will cause print failures). You want an all-blue model.</div>
+        </div>
+      </div>
+      <div class="workflow-step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <div class="step-title">Know Your Scale References</div>
+          <div class="step-body">28mm = standard DnD mini height (feet to eye). 32mm = "heroic" scale (more popular now). Warhammer 40K is 28–32mm "heroic." Add a reference cube of exactly 28×10×10mm to every new project until scale becomes muscle memory.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout callout-tip">
+      <div class="callout-icon">💡</div>
+      <div class="callout-body"><strong>CFS Color Tip:</strong> Your K2 Plus CFS system splits colors based on Z-height or painted face assignments in your slicer — but you control the <em>geometry</em> that those color regions land on. If you want a sword to be silver and a scabbard to be brown, they need to be separate mesh objects that you assign colors to in the slicer. Plan your color splits in Blender before you export.</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- SECTION 3: Essential Shortcuts -->
+  <div class="section">
+    <div class="section-label" data-num="03">Muscle Memory</div>
+    <h2>SHORTCUTS THAT MATTER FOR THIS WORKFLOW</h2>
+
+    <p class="prose">These are the shortcuts that come up on every single terrain or mini build. If they're not instinctive, make them instinctive.</p>
+
+    <div class="shortcut-grid">
+      <div class="shortcut-header">Navigation & Modes</div>
+      <div class="shortcut-row">
+        <div class="shortcut-key"><kbd>Tab</kbd></div>
+        <div class="shortcut-desc">Toggle Edit / Object mode — you'll do this constantly</div>
+      </div>
+      <div class="shortcut-row">
+        <div class="shortcut-key"><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></div>
+        <div class="shortcut-desc">Vertex / Edge / Face select mode in Edit</div>
+      </div>
+      <div class="shortcut-row">
+        <div class="shortcut-key"><kbd>Numpad 1/3/7</kbd></div>
+        <div class="shortcut-desc">Front / Right / Top orthographic views</div>
+      </div>
+      <div class="shortcut-row">
+        <div class="shortcut-key"><kbd>Numpad 5</kbd></div>
+        <div class="shortcut-desc">Toggle perspective / ortho — use ortho for precision work</div>
+      </div>
+    </div>
+
+    <div class="shortcut-grid">
+      <div class="shortcut-header">Essential Modeling</div>
+      <div class="shortcut-row">
+        <div class="shortcut-key"><kbd>G</kbd> <kbd>S</kbd> <kbd>R</kbd></div>
+        <div class="shortcut-desc">Grab / Scale / Rotate — then X, Y, or Z to constrain axis</div>
+      </div>
+      <div class="shortcut-row">
+        <div class="shortcut-key"><kbd>E</kbd></div>
+        <div class="shortcut-desc">Extrude — the most-used tool in hard surface terrain</div>
+      </div>
+      <div class="shortcut-row">
+        <div class="shortcut-key"><kbd>I</kbd></div>
+        <div class="shortcut-desc">Inset faces — for adding detail panels, recessed areas</div>
+      </div>
+      <div class="shortcut-row">
+        <div class="shortcut-key"><kbd>Ctrl+B</kbd></div>
+        <div class="shortcut-desc">Bevel — chamfer edges for printable, non-razor-sharp transitions</div>
+      </div>
+      <div class="shortcut-row">
+        <div class="shortcut-key"><kbd>Ctrl+R</kbd></div>
+        <div class="shortcut-desc">Loop cut — add edge loops to control shape flow</div>
+      </div>
+      <div class="shortcut-row">
+        <div class="shortcut-key"><kbd>Alt+Click</kbd></div>
+        <div class="shortcut-desc">Select edge/face loop — select an entire ring at once</div>
+      </div>
+      <div class="shortcut-row">
+        <div class="shortcut-key"><kbd>Ctrl+A</kbd></div>
+        <div class="shortcut-desc">Apply transforms — ALWAYS do this before exporting to STL</div>
+      </div>
+    </div>
+
+    <div class="shortcut-grid">
+      <div class="shortcut-header">Printability Fixes</div>
+      <div class="shortcut-row">
+        <div class="shortcut-key"><kbd>Alt+N</kbd></div>
+        <div class="shortcut-desc">Normals menu → Recalculate Outside — fixes flipped faces</div>
+      </div>
+      <div class="shortcut-row">
+        <div class="shortcut-key"><kbd>M</kbd></div>
+        <div class="shortcut-desc">Merge by Distance (after selecting all) — removes duplicate vertices</div>
+      </div>
+      <div class="shortcut-row">
+        <div class="shortcut-key"><kbd>Ctrl+J</kbd></div>
+        <div class="shortcut-desc">Join objects — combine separate meshes into one</div>
+      </div>
+      <div class="shortcut-row">
+        <div class="shortcut-key"><kbd>Ctrl+Alt+Shift+M</kbd></div>
+        <div class="shortcut-desc">Select Non-Manifold — highlights every problematic edge</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- SECTION 4: The Two Workflows -->
+  <div class="section">
+    <div class="section-label" data-num="04">Workflows</div>
+    <h2>TERRAIN VS MINIS — TWO DIFFERENT APPROACHES</h2>
+
+    <p class="prose">Your landscape and character backgrounds map directly to these two workflows. They use different tools and different thinking.</p>
+
+    <div class="card-grid">
+      <div class="card">
+        <span class="card-icon">🏰</span>
+        <div class="card-title">Hard Surface Terrain</div>
+        <div class="card-body">
+          Dungeon walls, buildings, architectural models, ruins.<br><br>
+          <strong>Workflow:</strong> Block modeling → Boolean operations → Bevel for edges → Modular design (pieces that lock together).<br><br>
+          <strong>Key tools:</strong> Extrude, Boolean modifier, Array modifier for repeating elements, Mirror modifier.<br><br>
+          <strong>Design rule:</strong> Make it modular. A 4×4" floor tile that connects to walls on all 4 sides is worth 10× a one-off piece.
+        </div>
+      </div>
+      <div class="card">
+        <span class="card-icon">🐉</span>
+        <div class="card-title">Organic Minis & Creatures</div>
+        <div class="card-body">
+          DnD characters, monsters, Warhammer units.<br><br>
+          <strong>Workflow:</strong> Sculpt mode for forms → Remesh for clean topology → Detail passes → Decimate for file size.<br><br>
+          <strong>Key tools:</strong> Sculpt brushes (Draw, Clay, Smooth, Crease), Voxel Remesh, Dyntopo.<br><br>
+          <strong>Design rule:</strong> Thick limbs survive. Thin sword = snapped sword. Design for the print, not the concept art.
+        </div>
+      </div>
+    </div>
+
+    <div class="callout callout-tip">
+      <div class="callout-icon">🎯</div>
+      <div class="callout-body"><strong>Start with scatter terrain.</strong> Small, quick pieces — barrels, crates, bones, campfires, rubble piles. Each one takes 30–60 min to model, prints in under 2 hours, and sells at $8–15 each. This is how you rebuild your Blender instincts fast with real output to show for it.</div>
+    </div>
+
+    <div class="callout callout-danger">
+      <div class="callout-icon">🚫</div>
+      <div class="callout-body"><strong>Common mistakes coming from game design:</strong> Leaving meshes open (not watertight). Using subdivisions for organic shapes without applying them before export — high-poly sculpts need to be decimated. Forgetting to apply the Mirror modifier before STL export. Modeling at the wrong scale and not catching it until the slicer.</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- SECTION 5: Pre-flight checklist -->
+  <div class="section">
+    <div class="section-label" data-num="05">Pre-flight</div>
+    <h2>BEFORE YOU HIT EXPORT</h2>
+
+    <p class="prose">Run this every time. One skipped step costs you a failed print and hours of reprinting. Click each item as you go.</p>
+
+    <div class="checklist">
+      <div class="checklist-header">Export Checklist — Every Single Model</div>
+      <div class="check-item" onclick="toggleCheck(this)">
+        <div class="check-box"></div>
+        <div class="check-text"><strong>Units set to mm</strong> — Scene Properties → Units → Millimeters, scale 0.001</div>
+      </div>
+      <div class="check-item" onclick="toggleCheck(this)">
+        <div class="check-box"></div>
+        <div class="check-text"><strong>Apply all transforms</strong> — Select all, Ctrl+A → Apply All Transforms</div>
+      </div>
+      <div class="check-item" onclick="toggleCheck(this)">
+        <div class="check-box"></div>
+        <div class="check-text"><strong>Apply all modifiers</strong> — Mirror, Solidify, Array, Subdivision must be applied not just visible</div>
+      </div>
+      <div class="check-item" onclick="toggleCheck(this)">
+        <div class="check-box"></div>
+        <div class="check-text"><strong>Merge by Distance</strong> — Edit mode, Select All (A), M → Merge by Distance. Removes duplicate verts</div>
+      </div>
+      <div class="check-item" onclick="toggleCheck(this)">
+        <div class="check-box"></div>
+        <div class="check-text"><strong>Recalculate Normals</strong> — Alt+N → Recalculate Outside. Check Face Orientation overlay — all blue</div>
+      </div>
+      <div class="check-item" onclick="toggleCheck(this)">
+        <div class="check-box"></div>
+        <div class="check-text"><strong>Run 3D Print Toolbox</strong> — Zero non-manifold edges, zero intersecting faces, wall thickness above 1.2mm</div>
+      </div>
+      <div class="check-item" onclick="toggleCheck(this)">
+        <div class="check-box"></div>
+        <div class="check-text"><strong>Verify dimensions</strong> — Press N, check Item panel. Is the model actually the size you want in mm?</div>
+      </div>
+      <div class="check-item" onclick="toggleCheck(this)">
+        <div class="check-box"></div>
+        <div class="check-text"><strong>Export STL</strong> — File → Export → STL. Check "Scene Unit" box. Binary format. Selection Only if needed</div>
+      </div>
+      <div class="check-item" onclick="toggleCheck(this)">
+        <div class="check-box"></div>
+        <div class="check-text"><strong>Re-import STL to verify</strong> — Import your own export back into Blender. Does it look right at the right size?</div>
+      </div>
+      <div class="check-item" onclick="toggleCheck(this)">
+        <div class="check-box"></div>
+        <div class="check-text"><strong>Test slice at 20–30% scale first</strong> — Always run a small test before committing hours of print time</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- SECTION 6: YouTube Channels -->
+  <div class="section">
+    <div class="section-label" data-num="06">Learning</div>
+    <h2>CHANNELS WORTH YOUR TIME</h2>
+
+    <p class="prose">Filtered for your level. These are not "donut tutorial" beginner channels — they're for people who already understand 3D space and want to move fast.</p>
+
+    <div class="channel-grid">
+      <a class="channel-card" href="https://www.youtube.com/@BlenderBros" target="_blank">
+        <div class="channel-avatar" style="background:rgba(124,106,240,0.15);border-color:var(--accent);">🔨</div>
+        <div class="channel-name">Blender Bros</div>
+        <div class="channel-focus">Hard Surface / 2025 updated</div>
+      </a>
+      <a class="channel-card" href="https://www.youtube.com/@JoshGambrell" target="_blank">
+        <div class="channel-avatar" style="background:rgba(45,212,191,0.15);border-color:var(--teal);">⚙️</div>
+        <div class="channel-name">Josh Gambrell</div>
+        <div class="channel-focus">Hard Surface Specialist</div>
+      </a>
+      <a class="channel-card" href="https://www.youtube.com/@GrantAbbitt" target="_blank">
+        <div class="channel-avatar" style="background:rgba(251,191,36,0.15);border-color:var(--amber);">🎓</div>
+        <div class="channel-name">Grant Abbitt</div>
+        <div class="channel-focus">Characters & Creatures</div>
+      </a>
+      <a class="channel-card" href="https://www.youtube.com/@CGMatter" target="_blank">
+        <div class="channel-avatar" style="background:rgba(248,113,113,0.15);border-color:var(--red);">🌀</div>
+        <div class="channel-name">CGMatter</div>
+        <div class="channel-focus">Hard Surface Series</div>
+      </a>
+      <a class="channel-card" href="https://www.youtube.com/@BlenderSecrets" target="_blank">
+        <div class="channel-avatar" style="background:rgba(192,132,252,0.15);border-color:var(--accent2);">⚡</div>
+        <div class="channel-name">Blender Secrets</div>
+        <div class="channel-focus">60-sec deep tips</div>
+      </a>
+      <a class="channel-card" href="https://www.youtube.com/@RyanKingArt" target="_blank">
+        <div class="channel-avatar" style="background:rgba(74,222,128,0.15);border-color:var(--green);">🎨</div>
+        <div class="channel-name">Ryan King Art</div>
+        <div class="channel-focus">Sculpt + Texture daily</div>
+      </a>
+    </div>
+
+    <p class="prose" style="margin-bottom:16px;">Specific videos to watch first — ordered by immediate usefulness to your workflow:</p>
+
+    <div class="video-list">
+      <a class="video-card" href="https://www.youtube.com/watch?v=0rzfb14mxWI" target="_blank">
+        <div class="video-thumb">▶</div>
+        <div class="video-info">
+          <div class="video-title">Hard Surface Modeling for Beginners — Essential Tools & Tricks 2025</div>
+          <div class="video-meta">
+            <span>Blender Bros</span>
+            <span class="video-tag">Hard Surface</span>
+            <span class="video-tag">2025</span>
+          </div>
+        </div>
+        <div class="video-arrow">→</div>
+      </a>
+      <a class="video-card" href="https://www.youtube.com/watch?v=i8JjMm06UEM" target="_blank">
+        <div class="video-thumb">▶</div>
+        <div class="video-info">
+          <div class="video-title">Hard Surface Modeling Tutorial for Blender Beginners — Blender Bros</div>
+          <div class="video-meta">
+            <span>Blender Bros</span>
+            <span class="video-tag">Terrain</span>
+            <span class="video-tag">Jan 2024</span>
+          </div>
+        </div>
+        <div class="video-arrow">→</div>
+      </a>
+      <a class="video-card" href="https://www.youtube.com/watch?v=W4AY1hL4nyk" target="_blank">
+        <div class="video-thumb">▶</div>
+        <div class="video-info">
+          <div class="video-title">Making 3D Printable Minis in Blender — Basic Tools</div>
+          <div class="video-meta">
+            <span>Terrain focused</span>
+            <span class="video-tag">Print-ready</span>
+            <span class="video-tag">Minis</span>
+          </div>
+        </div>
+        <div class="video-arrow">→</div>
+      </a>
+      <a class="video-card" href="https://www.youtube.com/watch?v=ZsCoUunF0xk" target="_blank">
+        <div class="video-thumb">▶</div>
+        <div class="video-info">
+          <div class="video-title">Design Scatter Terrain in Minutes with Blender — Tabletop Gaming</div>
+          <div class="video-meta">
+            <span>3D Printing for Tabletop</span>
+            <span class="video-tag">Scatter Terrain</span>
+            <span class="video-tag">Start Here</span>
+          </div>
+        </div>
+        <div class="video-arrow">→</div>
+      </a>
+      <a class="video-card" href="https://www.youtube.com/watch?v=nsTjnQ067sw" target="_blank">
+        <div class="video-thumb">▶</div>
+        <div class="video-info">
+          <div class="video-title">Blender Hard-Surface Modeling Fundamentals — Louis du Mont</div>
+          <div class="video-meta">
+            <span>Blender Official</span>
+            <span class="video-tag">Fundamentals</span>
+            <span class="video-tag">Robot Build</span>
+          </div>
+        </div>
+        <div class="video-arrow">→</div>
+      </a>
+    </div>
+
+    <div class="callout callout-tip">
+      <div class="callout-icon">🎯</div>
+      <div class="callout-body"><strong>Study strategy that fits your background:</strong> Don't watch passively. Pause every 5 minutes, replicate what was done, then continue. With your existing Blender instincts, you'll internalize tools in one watch instead of three. Your UX eye will also naturally catch when something "looks wrong" before the 3D Print Toolbox tells you.</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- SECTION 7: Your First 3 Projects -->
+  <div class="section">
+    <div class="section-label" data-num="07">Projects</div>
+    <h2>YOUR FIRST 3 BUILDS — IN ORDER</h2>
+
+    <p class="prose">These are sequenced to rebuild your Blender muscle memory while producing actual sellable output.</p>
+
+    <div class="workflow">
+      <div class="workflow-step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <div class="step-title">Scatter Terrain: Barrel or Crate</div>
+          <div class="step-body">Pure hard surface, zero organic shapes. <strong>Estimated time: 45–90 mins.</strong> Teaches: extrude, inset, bevel, boolean for hardware details. Prints in 1–2 hrs. Sells at $8–12 for a set. Your landscape background means you'll nail the weathered, beaten look immediately. This is your "print and sell it this weekend" piece.</div>
+        </div>
+      </div>
+      <div class="workflow-step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <div class="step-title">Terrain: Modular Dungeon Wall (4" segment)</div>
+          <div class="step-body">Block modeling, Mirror modifier, Array modifier. <strong>Estimated time: 2–3 hrs.</strong> Design it once and print 20. Teaches modularity — the highest-leverage skill for terrain design. Stone brick detail can be achieved with a Displacement modifier or by hand-sculpting a 4×4 section and instancing it with Array. Sells as sets of 4–8 pieces.</div>
+        </div>
+      </div>
+      <div class="workflow-step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <div class="step-title">Character: Simple DnD Monster Mini</div>
+          <div class="step-body">Sculpt mode re-entry. Start with something humanoid but beefy — a heavily armored guard, a golem, a troll. <strong>Estimated time: 3–5 hrs.</strong> Teaches: Dyntopo sculpting, remesh, Decimate modifier for file size. Your character background is your biggest asset here — you'll progress faster than most people starting minis from scratch. Design thick, simple features that survive 32mm scale.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout callout-tip">
+      <div class="callout-icon">🖨️</div>
+      <div class="callout-body"><strong>K2 Plus specific:</strong> When you're ready to plan CFS color splits, do it during the Blender phase, not the slicer phase. Separate your mesh objects by color region before export — e.g., barrel body (brown) as one object, metal bands (grey) as another. Export as separate STLs, then combine in your slicer and assign filament slots. This gives you cleaner color boundaries than painting in the slicer alone.</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function toggleCheck(el) {
+  el.classList.toggle('done');
+  const box = el.querySelector('.check-box');
+  box.textContent = el.classList.contains('done') ? '✓' : '';
+}
+</script>
+</body>
+</html>
