@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Print Forge — Cost Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --border: #2a2a3a;
+    --accent: #e8622a;
+    --accent2: #f0a050;
+    --text: #e8e8f0;
+    --text-dim: #888899;
+    --text-dimmer: #444455;
+    --green: #4ade80;
+    --red: #f87171;
+    --yellow: #fbbf24;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(232,98,42,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(232,98,42,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 48px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 24px;
+  }
+
+  .logo {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 32px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+
+  .logo span { color: var(--accent); }
+
+  .logo-sub {
+    font-family: 'Crimson Pro', serif;
+    font-style: italic;
+    font-weight: 300;
+    font-size: 14px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+
+  .printer-badge {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-align: right;
+    line-height: 1.8;
+  }
+
+  .printer-badge strong {
+    color: var(--accent2);
+    display: block;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    letter-spacing: 2px;
+  }
+
+  /* Layout */
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+  }
+
+  @media (max-width: 700px) {
+    .grid, .grid-3 { grid-template-columns: 1fr; }
+    header { flex-direction: column; align-items: flex-start; gap: 12px; }
+  }
+
+  /* Panels */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 24px;
+    position: relative;
+  }
+
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+  }
+
+  .panel-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .panel-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Form elements */
+  .field {
+    margin-bottom: 16px;
+  }
+
+  .field:last-child { margin-bottom: 0; }
+
+  label {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+
+  input[type="number"], input[type="text"], select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 14px;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color 0.2s;
+    -moz-appearance: textfield;
+  }
+
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+  input:focus, select:focus {
+    border-color: var(--accent);
+    background: #1e1e2a;
+  }
+
+  select option { background: var(--surface2); }
+
+  .input-group {
+    position: relative;
+  }
+
+  .input-prefix, .input-suffix {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-dim);
+    font-size: 12px;
+    pointer-events: none;
+  }
+
+  .input-prefix { left: 12px; }
+  .input-suffix { right: 12px; }
+  .input-prefix ~ input { padding-left: 24px; }
+  .input-suffix ~ input { padding-right: 36px; }
+
+  /* Filament colors */
+  .filament-section {
+    grid-column: 1 / -1;
+  }
+
+  .color-slots {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .color-slot {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 14px;
+    position: relative;
+  }
+
+  .color-slot-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .color-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.2);
+    flex-shrink: 0;
+  }
+
+  .color-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .color-slot input {
+    margin-bottom: 8px;
+  }
+
+  .color-slot input:last-child { margin-bottom: 0; }
+
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .toggle-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .slot-count {
+    display: flex;
+    gap: 6px;
+  }
+
+  .slot-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    border-radius: 2px;
+  }
+
+  .slot-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Results panel */
+  .results-panel {
+    grid-column: 1 / -1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .results-header {
+    background: var(--surface2);
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .results-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+  }
+
+  @media (max-width: 700px) {
+    .results-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  .result-cell {
+    padding: 24px;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .result-cell:last-child { border-right: none; }
+
+  .result-label {
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--text-dimmer);
+    margin-bottom: 8px;
+  }
+
+  .result-value {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .result-value.positive { color: var(--green); }
+  .result-value.negative { color: var(--red); }
+  .result-value.warning { color: var(--yellow); }
+
+  .result-sub {
+    font-size: 10px;
+    color: var(--text-dimmer);
+    margin-top: 4px;
+  }
+
+  /* Margin bar */
+  .margin-bar-wrap {
+    grid-column: 1 / -1;
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+  }
+
+  .margin-bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+  }
+
+  .margin-bar {
+    height: 6px;
+    background: var(--surface2);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .margin-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s;
+  }
+
+  /* Recommendation section */
+  .rec-section {
+    grid-column: 1 / -1;
+    padding: 20px 24px;
+    border-top: 1px solid var(--border);
+    background: rgba(232,98,42,0.03);
+  }
+
+  .rec-title {
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+
+  .rec-text {
+    font-family: 'Crimson Pro', serif;
+    font-size: 16px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  .rec-text strong { color: var(--text); font-weight: 400; }
+
+  /* Venue toggle */
+  .venue-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 20px;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .venue-tab {
+    flex: 1;
+    padding: 10px;
+    text-align: center;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    background: var(--surface2);
+    color: var(--text-dim);
+    border: none;
+    font-family: 'Space Mono', monospace;
+    transition: all 0.15s;
+  }
+
+  .venue-tab.active {
+    background: var(--accent);
+    color: white;
+  }
+
+  /* Breakdown table */
+  .breakdown {
+    grid-column: 1 / -1;
+    padding: 0 24px 20px;
+  }
+
+  .breakdown-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+
+  .breakdown-row:last-child { border-bottom: none; }
+  .breakdown-key { color: var(--text-dim); }
+  .breakdown-val { color: var(--text); font-weight: 700; }
+  .breakdown-val.accent { color: var(--accent2); }
+
+  /* Print type presets */
+  .presets {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  .preset-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    padding: 6px 10px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+
+  .preset-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .section-full { grid-column: 1 / -1; }
+
+  /* Animate in */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .panel, .results-panel {
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .panel:nth-child(2) { animation-delay: 0.05s; }
+  .panel:nth-child(3) { animation-delay: 0.1s; }
+  .panel:nth-child(4) { animation-delay: 0.15s; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div>
+      <div class="logo">Print<span>Forge</span></div>
+      <div class="logo-sub">Cost & Pricing Calculator</div>
+    </div>
+    <div class="printer-badge">
+      <strong>CREALITY K2 PLUS</strong>
+      CFS Multicolor System Active<br>
+      Utah Farmers Market Edition
+    </div>
+  </header>
+
+  <!-- Quick Presets -->
+  <div style="margin-bottom: 20px;">
+    <div style="font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--text-dim); margin-bottom:8px;">Quick Load Preset</div>
+    <div class="presets">
+      <button class="preset-btn" onclick="loadPreset('mini')">DnD Mini</button>
+      <button class="preset-btn" onclick="loadPreset('terrain')">Terrain Piece</button>
+      <button class="preset-btn" onclick="loadPreset('warhammer')">Warhammer Unit</button>
+      <button class="preset-btn" onclick="loadPreset('building')">Building Model</button>
+      <button class="preset-btn" onclick="loadPreset('scatter')">Scatter Terrain</button>
+      <button class="preset-btn" onclick="loadPreset('large')">Large Centerpiece</button>
+    </div>
+  </div>
+
+  <div class="grid">
+
+    <!-- Print Details -->
+    <div class="panel">
+      <div class="panel-title">Print Details</div>
+
+      <div class="field">
+        <label>Print Name / SKU</label>
+        <input type="text" id="printName" placeholder="e.g. Dungeon Door Set x4" oninput="calculate()">
+      </div>
+
+      <div class="field">
+        <label>Print Time (hours)</label>
+        <div class="input-group">
+          <input type="number" id="printHours" value="4" min="0.1" step="0.5" oninput="calculate()">
+          <span class="input-suffix">hrs</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Number of Colors Used (CFS)</label>
+        <div class="input-group">
+          <input type="number" id="colorCount" value="1" min="1" max="4" step="1" oninput="updateColorSlots()">
+          <span class="input-suffix">/ 4</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Support Material Used?</label>
+        <select id="supports" onchange="calculate()">
+          <option value="0">None</option>
+          <option value="5">Minimal (~5g wasted)</option>
+          <option value="15">Moderate (~15g wasted)</option>
+          <option value="30">Heavy (~30g wasted)</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Print Complexity</label>
+        <select id="complexity" onchange="calculate()">
+          <option value="1.0">Standard</option>
+          <option value="1.15">Detailed (fine features)</option>
+          <option value="1.3">High Detail (mini-scale)</option>
+          <option value="1.5">Extreme (competition quality)</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Failed Print Rate (this model)</label>
+        <select id="failRate" onchange="calculate()">
+          <option value="0">0% — Proven file</option>
+          <option value="0.05">5% — Mostly reliable</option>
+          <option value="0.10" selected>10% — Typical</option>
+          <option value="0.20">20% — Complex/experimental</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Costs -->
+    <div class="panel">
+      <div class="panel-title">Operating Costs</div>
+
+      <div class="field">
+        <label>Electricity Rate</label>
+        <div class="input-group">
+          <span class="input-prefix">$</span>
+          <input type="number" id="electricRate" value="0.12" min="0" step="0.01" oninput="calculate()">
+          <span class="input-suffix">/kWh</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Printer Power Draw (K2 Plus ≈ 0.35kW)</label>
+        <div class="input-group">
+          <input type="number" id="printerWatts" value="0.35" min="0" step="0.05" oninput="calculate()">
+          <span class="input-suffix">kW</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Your Labor Rate</label>
+        <div class="input-group">
+          <span class="input-prefix">$</span>
+          <input type="number" id="laborRate" value="20" min="0" step="1" oninput="calculate()">
+          <span class="input-suffix">/hr</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Labor Time (setup, post-process)</label>
+        <div class="input-group">
+          <input type="number" id="laborHours" value="0.5" min="0" step="0.25" oninput="calculate()">
+          <span class="input-suffix">hrs</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Booth Fee (if selling at market)</label>
+        <div class="input-group">
+          <span class="input-prefix">$</span>
+          <input type="number" id="boothFee" value="35" min="0" step="5" oninput="calculate()">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Units Sold Per Market Day</label>
+        <div class="input-group">
+          <input type="number" id="unitsSold" value="10" min="1" step="1" oninput="calculate()">
+          <span class="input-suffix">units</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filament Colors -->
+    <div class="panel filament-section" style="grid-column: 1 / -1;">
+      <div class="panel-title">Filament / CFS Colors</div>
+      <div id="colorSlots" class="color-slots"></div>
+    </div>
+
+    <!-- Venue & Pricing -->
+    <div class="panel section-full">
+      <div class="panel-title">Sale Channel & Margin</div>
+
+      <div class="venue-tabs">
+        <button class="venue-tab active" onclick="setVenue('market', this)">Farmers Market</button>
+        <button class="venue-tab" onclick="setVenue('etsy', this)">Etsy / Online</button>
+        <button class="venue-tab" onclick="setVenue('stl', this)">STL Digital Sale</button>
+        <button class="venue-tab" onclick="setVenue('commission', this)">Commission</button>
+      </div>
+
+      <div class="grid">
+        <div class="field">
+          <label>Platform Fee %</label>
+          <div class="input-group">
+            <input type="number" id="platformFee" value="0" min="0" max="100" step="0.5" oninput="calculate()">
+            <span class="input-suffix">%</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Target Margin %</label>
+          <div class="input-group">
+            <input type="number" id="targetMargin" value="60" min="0" max="100" step="5" oninput="calculate()">
+            <span class="input-suffix">%</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Multicolor Premium</label>
+          <select id="multiPremium" onchange="calculate()">
+            <option value="1.0">None (single color)</option>
+            <option value="1.15">+15% (2 colors)</option>
+            <option value="1.25" selected>+25% (3 colors)</option>
+            <option value="1.35">+35% (4 colors, full CFS)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Custom Sale Price (override)</label>
+          <div class="input-group">
+            <span class="input-prefix">$</span>
+            <input type="number" id="customPrice" value="" min="0" step="0.50" placeholder="Auto" oninput="calculate()">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="results-panel section-full">
+      <div class="results-header">
+        <div class="results-title">Cost Breakdown & Pricing</div>
+        <div style="flex:1"></div>
+        <div style="font-size:10px; color:var(--text-dimmer); letter-spacing:1px;" id="printNameDisplay">—</div>
+      </div>
+
+      <div class="results-grid">
+        <div class="result-cell">
+          <div class="result-label">Filament Cost</div>
+          <div class="result-value" id="res-filament">$0.00</div>
+          <div class="result-sub" id="res-filament-sub">0g total</div>
+        </div>
+        <div class="result-cell">
+          <div class="result-label">Electricity</div>
+          <div class="result-value" id="res-electric">$0.00</div>
+          <div class="result-sub" id="res-electric-sub">0 kWh</div>
+        </div>
+        <div class="result-cell">
+          <div class="result-label">Labor</div>
+          <div class="result-value" id="res-labor">$0.00</div>
+          <div class="result-sub" id="res-labor-sub">0 hrs</div>
+        </div>
+        <div class="result-cell">
+          <div class="result-label">True Cost (w/ failures)</div>
+          <div class="result-value" id="res-truecost">$0.00</div>
+          <div class="result-sub" id="res-truecost-sub">incl. fail rate</div>
+        </div>
+      </div>
+
+      <div class="results-grid" style="border-top: 1px solid var(--border);">
+        <div class="result-cell">
+          <div class="result-label">Suggested Price</div>
+          <div class="result-value positive" id="res-price">$0.00</div>
+          <div class="result-sub">w/ multicolor premium</div>
+        </div>
+        <div class="result-cell">
+          <div class="result-label">Actual Margin</div>
+          <div class="result-value" id="res-margin">0%</div>
+          <div class="result-sub" id="res-margin-sub">after platform fee</div>
+        </div>
+        <div class="result-cell">
+          <div class="result-label">Profit Per Unit</div>
+          <div class="result-value" id="res-profit">$0.00</div>
+          <div class="result-sub" id="res-profit-sub"></div>
+        </div>
+        <div class="result-cell">
+          <div class="result-label">Market Day Revenue</div>
+          <div class="result-value" id="res-revenue">$0.00</div>
+          <div class="result-sub" id="res-revenue-sub">gross</div>
+        </div>
+      </div>
+
+      <div class="margin-bar-wrap">
+        <div class="margin-bar-label">
+          <span>Margin Health</span>
+          <span id="margin-bar-label-right">0%</span>
+        </div>
+        <div class="margin-bar">
+          <div class="margin-fill" id="margin-fill" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div class="breakdown">
+        <div class="breakdown-row">
+          <span class="breakdown-key">Raw material cost</span>
+          <span class="breakdown-val" id="bd-material">$0.00</span>
+        </div>
+        <div class="breakdown-row">
+          <span class="breakdown-key">Electricity</span>
+          <span class="breakdown-val" id="bd-elec">$0.00</span>
+        </div>
+        <div class="breakdown-row">
+          <span class="breakdown-key">Labor</span>
+          <span class="breakdown-val" id="bd-labor">$0.00</span>
+        </div>
+        <div class="breakdown-row">
+          <span class="breakdown-key">Booth fee allocation (per unit)</span>
+          <span class="breakdown-val" id="bd-booth">$0.00</span>
+        </div>
+        <div class="breakdown-row">
+          <span class="breakdown-key">Failure rate buffer</span>
+          <span class="breakdown-val" id="bd-fail">$0.00</span>
+        </div>
+        <div class="breakdown-row">
+          <span class="breakdown-key">Platform / transaction fee</span>
+          <span class="breakdown-val" id="bd-platform">$0.00</span>
+        </div>
+        <div class="breakdown-row" style="border-top: 1px solid var(--accent); margin-top:4px; padding-top:12px;">
+          <span class="breakdown-key" style="color:var(--text);">TOTAL COST PER UNIT</span>
+          <span class="breakdown-val accent" id="bd-total">$0.00</span>
+        </div>
+      </div>
+
+      <div class="rec-section">
+        <div class="rec-title">Recommendation</div>
+        <div class="rec-text" id="recommendation">Enter your print details above to get a pricing recommendation.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// Color definitions for CFS slots
+const COLOR_DEFS = [
+  { name: 'Color 1', dot: '#e05a4e', defaultCost: 25, defaultGrams: 15 },
+  { name: 'Color 2', dot: '#4e8ae0', defaultCost: 25, defaultGrams: 8 },
+  { name: 'Color 3', dot: '#4ec97a', defaultCost: 28, defaultGrams: 6 },
+  { name: 'Color 4', dot: '#e0c44e', defaultCost: 30, defaultGrams: 5 },
+];
+
+let activeVenue = 'market';
+let colorSlotCount = 1;
+
+function updateColorSlots() {
+  colorSlotCount = parseInt(document.getElementById('colorCount').value) || 1;
+  colorSlotCount = Math.min(4, Math.max(1, colorSlotCount));
+  document.getElementById('colorCount').value = colorSlotCount;
+
+  // Update multicolor premium
+  const premiumSelect = document.getElementById('multiPremium');
+  if (colorSlotCount === 1) premiumSelect.value = '1.0';
+  else if (colorSlotCount === 2) premiumSelect.value = '1.15';
+  else if (colorSlotCount === 3) premiumSelect.value = '1.25';
+  else premiumSelect.value = '1.35';
+
+  renderColorSlots();
+  calculate();
+}
+
+function renderColorSlots() {
+  const container = document.getElementById('colorSlots');
+  const existing = {};
+  container.querySelectorAll('.color-slot').forEach((slot, i) => {
+    existing[i] = {
+      cost: slot.querySelector('.slot-cost')?.value,
+      grams: slot.querySelector('.slot-grams')?.value,
+    };
+  });
+
+  container.innerHTML = '';
+  for (let i = 0; i < colorSlotCount; i++) {
+    const def = COLOR_DEFS[i];
+    const slot = document.createElement('div');
+    slot.className = 'color-slot';
+    slot.innerHTML = `
+      <div class="color-slot-header">
+        <div class="color-dot" style="background:${def.dot}"></div>
+        <div class="color-label">${def.name}</div>
+      </div>
+      <label style="margin-bottom:4px;">Filament Cost</label>
+      <div class="input-group" style="margin-bottom:8px;">
+        <span class="input-prefix">$</span>
+        <input type="number" class="slot-cost" value="${existing[i]?.cost || def.defaultCost}" min="0" step="1" placeholder="$/kg" oninput="calculate()">
+        <span class="input-suffix">/kg</span>
+      </div>
+      <label style="margin-bottom:4px;">Grams Used</label>
+      <div class="input-group">
+        <input type="number" class="slot-grams" value="${existing[i]?.grams || def.defaultGrams}" min="0" step="1" oninput="calculate()">
+        <span class="input-suffix">g</span>
+      </div>
+    `;
+    container.appendChild(slot);
+  }
+}
+
+function setVenue(venue, btn) {
+  activeVenue = venue;
+  document.querySelectorAll('.venue-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  const feeInput = document.getElementById('platformFee');
+  const boothInput = document.getElementById('boothFee');
+  const marginInput = document.getElementById('targetMargin');
+
+  if (venue === 'market') {
+    feeInput.value = 0;
+    boothInput.value = 35;
+    marginInput.value = 60;
+  } else if (venue === 'etsy') {
+    feeInput.value = 6.5;
+    boothInput.value = 0;
+    marginInput.value = 55;
+  } else if (venue === 'stl') {
+    feeInput.value = 5;
+    boothInput.value = 0;
+    marginInput.value = 90;
+  } else if (venue === 'commission') {
+    feeInput.value = 0;
+    boothInput.value = 0;
+    marginInput.value = 65;
+  }
+  calculate();
+}
+
+function loadPreset(type) {
+  const presets = {
+    mini: { name:'DnD Character Mini', hours:3, colors:2, supports:'5', complexity:'1.3', failRate:'0.10', labor:0.5, grams:[12,6] },
+    terrain: { name:'Dungeon Terrain Set', hours:6, colors:2, supports:'15', complexity:'1.15', failRate:'0.05', labor:0.75, grams:[45,15] },
+    warhammer: { name:'Warhammer Unit (x5)', hours:8, colors:3, supports:'5', complexity:'1.3', failRate:'0.10', labor:1, grams:[20,8,5] },
+    building: { name:'Architectural Model', hours:14, colors:1, supports:'30', complexity:'1.15', failRate:'0.05', labor:2, grams:[80] },
+    scatter: { name:'Scatter Terrain Pack', hours:4, colors:2, supports:'0', complexity:'1.0', failRate:'0.05', labor:0.5, grams:[30,10] },
+    large: { name:'Large Centerpiece', hours:20, colors:4, supports:'30', complexity:'1.5', failRate:'0.20', labor:2, grams:[60,25,20,15] },
+  };
+
+  const p = presets[type];
+  document.getElementById('printName').value = p.name;
+  document.getElementById('printHours').value = p.hours;
+  document.getElementById('colorCount').value = p.colors;
+  document.getElementById('supports').value = p.supports;
+  document.getElementById('complexity').value = p.complexity;
+  document.getElementById('failRate').value = p.failRate;
+  document.getElementById('laborHours').value = p.labor;
+
+  colorSlotCount = p.colors;
+  renderColorSlots();
+
+  const slots = document.querySelectorAll('.color-slot');
+  slots.forEach((slot, i) => {
+    if (p.grams[i] !== undefined) {
+      slot.querySelector('.slot-grams').value = p.grams[i];
+    }
+  });
+
+  calculate();
+}
+
+function fmt(n) {
+  return '$' + n.toFixed(2);
+}
+
+function calculate() {
+  // Inputs
+  const printName = document.getElementById('printName').value || '—';
+  const printHours = parseFloat(document.getElementById('printHours').value) || 0;
+  const electricRate = parseFloat(document.getElementById('electricRate').value) || 0;
+  const printerWatts = parseFloat(document.getElementById('printerWatts').value) || 0;
+  const laborRate = parseFloat(document.getElementById('laborRate').value) || 0;
+  const laborHours = parseFloat(document.getElementById('laborHours').value) || 0;
+  const boothFee = parseFloat(document.getElementById('boothFee').value) || 0;
+  const unitsSold = parseInt(document.getElementById('unitsSold').value) || 1;
+  const supports = parseFloat(document.getElementById('supports').value) || 0;
+  const complexity = parseFloat(document.getElementById('complexity').value) || 1;
+  const failRate = parseFloat(document.getElementById('failRate').value) || 0;
+  const platformFee = parseFloat(document.getElementById('platformFee').value) || 0;
+  const targetMargin = parseFloat(document.getElementById('targetMargin').value) || 60;
+  const multiPremium = parseFloat(document.getElementById('multiPremium').value) || 1;
+  const customPrice = parseFloat(document.getElementById('customPrice').value) || 0;
+
+  // Filament cost
+  const slots = document.querySelectorAll('.color-slot');
+  let filamentCost = 0;
+  let totalGrams = 0;
+  slots.forEach(slot => {
+    const costPerKg = parseFloat(slot.querySelector('.slot-cost')?.value) || 25;
+    const grams = parseFloat(slot.querySelector('.slot-grams')?.value) || 0;
+    filamentCost += (grams / 1000) * costPerKg;
+    totalGrams += grams;
+  });
+
+  // Support waste
+  const supportCost = (supports / 1000) * 25;
+  totalGrams += supports;
+  const materialCost = filamentCost + supportCost;
+
+  // Electricity
+  const kWh = printerWatts * printHours;
+  const electricCost = kWh * electricRate;
+
+  // Labor
+  const laborCost = laborRate * laborHours;
+
+  // Booth allocation
+  const boothAlloc = boothFee / unitsSold;
+
+  // Base cost
+  const baseCost = materialCost + electricCost + laborCost + boothAlloc;
+
+  // Complexity multiplier
+  const complexCost = baseCost * complexity;
+
+  // Failure buffer
+  const failBuffer = complexCost * failRate;
+  const trueCost = complexCost + failBuffer;
+
+  // Suggested price
+  let suggestedPrice;
+  if (customPrice > 0) {
+    suggestedPrice = customPrice;
+  } else {
+    // Price to hit target margin after platform fee
+    const platformMult = 1 - (platformFee / 100);
+    suggestedPrice = (trueCost / (1 - targetMargin / 100)) * multiPremium / platformMult;
+  }
+
+  // Platform fee amount
+  const platformFeeAmt = suggestedPrice * (platformFee / 100);
+
+  // Actual margin
+  const revenue = suggestedPrice - platformFeeAmt;
+  const profit = revenue - trueCost;
+  const actualMargin = revenue > 0 ? (profit / revenue) * 100 : 0;
+
+  // Market day totals
+  const dayRevenue = suggestedPrice * unitsSold;
+  const dayProfit = profit * unitsSold;
+
+  // Update UI
+  document.getElementById('printNameDisplay').textContent = printName;
+
+  document.getElementById('res-filament').textContent = fmt(filamentCost);
+  document.getElementById('res-filament-sub').textContent = totalGrams.toFixed(0) + 'g total';
+
+  document.getElementById('res-electric').textContent = fmt(electricCost);
+  document.getElementById('res-electric-sub').textContent = kWh.toFixed(3) + ' kWh';
+
+  document.getElementById('res-labor').textContent = fmt(laborCost);
+  document.getElementById('res-labor-sub').textContent = laborHours + ' hrs @ $' + laborRate + '/hr';
+
+  document.getElementById('res-truecost').textContent = fmt(trueCost);
+  document.getElementById('res-truecost-sub').textContent = 'incl. ' + (failRate * 100).toFixed(0) + '% fail buffer';
+
+  const priceEl = document.getElementById('res-price');
+  priceEl.textContent = fmt(suggestedPrice);
+  priceEl.className = 'result-value positive';
+
+  const marginEl = document.getElementById('res-margin');
+  marginEl.textContent = actualMargin.toFixed(1) + '%';
+  marginEl.className = 'result-value ' + (actualMargin >= 50 ? 'positive' : actualMargin >= 30 ? 'warning' : 'negative');
+
+  document.getElementById('res-margin-sub').textContent = 'after ' + platformFee + '% platform fee';
+
+  const profitEl = document.getElementById('res-profit');
+  profitEl.textContent = fmt(profit);
+  profitEl.className = 'result-value ' + (profit > 0 ? 'positive' : 'negative');
+  document.getElementById('res-profit-sub').textContent = profit > 0 ? 'net per unit' : 'losing money!';
+
+  document.getElementById('res-revenue').textContent = fmt(dayRevenue);
+  document.getElementById('res-revenue-sub').textContent = fmt(dayProfit) + ' net (' + unitsSold + ' units)';
+
+  // Breakdown
+  document.getElementById('bd-material').textContent = fmt(materialCost);
+  document.getElementById('bd-elec').textContent = fmt(electricCost);
+  document.getElementById('bd-labor').textContent = fmt(laborCost);
+  document.getElementById('bd-booth').textContent = fmt(boothAlloc);
+  document.getElementById('bd-fail').textContent = fmt(failBuffer);
+  document.getElementById('bd-platform').textContent = fmt(platformFeeAmt);
+  document.getElementById('bd-total').textContent = fmt(trueCost);
+
+  // Margin bar
+  const barPct = Math.min(100, Math.max(0, actualMargin));
+  const fill = document.getElementById('margin-fill');
+  fill.style.width = barPct + '%';
+  fill.style.background = actualMargin >= 50
+    ? 'linear-gradient(90deg, #4ade80, #22c55e)'
+    : actualMargin >= 30
+    ? 'linear-gradient(90deg, #fbbf24, #f59e0b)'
+    : 'linear-gradient(90deg, #f87171, #ef4444)';
+  document.getElementById('margin-bar-label-right').textContent = actualMargin.toFixed(1) + '%';
+
+  // Recommendation
+  let rec = '';
+  if (actualMargin >= 60) {
+    rec = `<strong>${fmt(suggestedPrice)}</strong> is a strong price point — your ${actualMargin.toFixed(0)}% margin gives you room to discount at market without going underwater. At ${unitsSold} units per day, that's <strong>${fmt(dayProfit)} take-home</strong> after covering the booth.`;
+  } else if (actualMargin >= 40) {
+    rec = `Margin is acceptable at ${actualMargin.toFixed(0)}% but tighter than ideal. Consider reducing labor time through workflow optimization, or raising price by <strong>${fmt(trueCost * 0.2)}</strong> to reach a healthier 60% margin.`;
+  } else if (actualMargin >= 20) {
+    rec = `At ${actualMargin.toFixed(0)}% margin, you're covering costs but barely compensating your time. This print either needs a higher price, faster print time, or less expensive filament. Your labor rate is the biggest lever.`;
+  } else {
+    rec = `⚠ This print is unprofitable at the current price. True cost is <strong>${fmt(trueCost)}</strong>. You need to price above <strong>${fmt(trueCost / 0.5)}</strong> to hit a 50% margin. Reassess filament weight, print time, or skip this model.`;
+  }
+
+  if (multiPremium > 1) {
+    rec += ` The CFS multicolor premium is already baked into the suggested price — lean into presenting the color as a feature, not a novelty.`;
+  }
+
+  document.getElementById('recommendation').innerHTML = rec;
+}
+
+// Init
+renderColorSlots();
+calculate();
+</script>
+</body>
+</html>
