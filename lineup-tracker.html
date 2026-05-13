@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Market Table — Lineup Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Lato:ital,wght@0,300;0,400;1,300&family=Inconsolata:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f5f0e8;
+  --parchment: #ede6d3;
+  --parchment2: #e4dbc4;
+  --ink: #1c1611;
+  --ink-dim: #5a4f3e;
+  --ink-dimmer: #9a8f7e;
+  --red: #8b1a1a;
+  --red-light: #c0392b;
+  --gold: #b8860b;
+  --gold-light: #d4a017;
+  --green: #2d5a1b;
+  --green-light: #4a7c2f;
+  --blue: #1a3a5c;
+  --border: #c8b89a;
+  --border-dark: #9a8a6a;
+  --shadow: rgba(28,22,17,0.15);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Lato', serif;
+  font-weight: 300;
+  min-height: 100vh;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+}
+
+/* Header */
+header {
+  text-align: center;
+  margin-bottom: 48px;
+  position: relative;
+}
+
+.header-rule {
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--gold), var(--red), var(--gold), transparent);
+  margin-bottom: 24px;
+}
+
+.header-rule-thin {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-dark), transparent);
+  margin-top: 24px;
+}
+
+h1 {
+  font-family: 'Cinzel', serif;
+  font-size: 36px;
+  font-weight: 900;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  color: var(--ink);
+  line-height: 1.1;
+}
+
+h1 span { color: var(--red); }
+
+.subtitle {
+  font-family: 'Lato', sans-serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 14px;
+  color: var(--ink-dim);
+  letter-spacing: 2px;
+  margin-top: 8px;
+}
+
+/* Tab nav */
+.tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 32px;
+  border-bottom: 2px solid var(--border-dark);
+  overflow-x: auto;
+}
+
+.tab {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 12px 20px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: var(--ink-dim);
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.tab:hover { color: var(--ink); }
+.tab.active {
+  color: var(--red);
+  border-bottom-color: var(--red);
+  font-weight: 600;
+}
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* Summary bar */
+.summary-bar {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+@media (max-width: 700px) {
+  .summary-bar { grid-template-columns: 1fr 1fr; }
+}
+
+.summary-card {
+  background: var(--parchment);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 16px;
+  text-align: center;
+  position: relative;
+  box-shadow: 2px 2px 0 var(--shadow);
+}
+
+.summary-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--gold);
+}
+
+.summary-label {
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--ink-dimmer);
+  margin-bottom: 6px;
+}
+
+.summary-value {
+  font-family: 'Inconsolata', monospace;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.summary-value.gold { color: var(--gold); }
+.summary-value.green { color: var(--green); }
+.summary-value.red { color: var(--red); }
+
+/* Product table */
+.table-wrap {
+  background: var(--parchment);
+  border: 1px solid var(--border-dark);
+  border-radius: 2px;
+  box-shadow: 3px 3px 0 var(--shadow);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: var(--parchment2);
+  border-bottom: 1px solid var(--border);
+}
+
+.table-title {
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  letter-spacing: 3px;
+  font-weight: 600;
+  color: var(--red);
+  text-transform: uppercase;
+}
+
+.add-btn {
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  background: var(--red);
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  cursor: pointer;
+  border-radius: 1px;
+  transition: background 0.15s;
+}
+
+.add-btn:hover { background: var(--red-light); }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  padding: 10px 12px;
+  text-align: left;
+  background: var(--parchment2);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  font-size: 13px;
+}
+
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(200, 184, 154, 0.3); }
+
+td input, td select {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 1px;
+  font-family: 'Inconsolata', monospace;
+  font-size: 13px;
+  color: var(--ink);
+  padding: 5px 8px;
+  width: 100%;
+  outline: none;
+}
+
+td input:focus, td select:focus {
+  border-color: var(--red);
+}
+
+td input[type="text"] { font-family: 'Lato', sans-serif; font-size: 13px; }
+
+.delete-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--ink-dimmer);
+  font-size: 14px;
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1px;
+  transition: all 0.15s;
+}
+
+.delete-btn:hover { border-color: var(--red); color: var(--red); background: rgba(139,26,26,0.05); }
+
+/* Status badges */
+.badge {
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 3px 7px;
+  border-radius: 1px;
+  white-space: nowrap;
+}
+
+.badge-ready { background: rgba(45,90,27,0.1); color: var(--green); border: 1px solid var(--green-light); }
+.badge-printing { background: rgba(184,134,11,0.1); color: var(--gold); border: 1px solid var(--gold-light); }
+.badge-design { background: rgba(26,58,92,0.1); color: var(--blue); border: 1px solid var(--blue); }
+.badge-low { background: rgba(139,26,26,0.1); color: var(--red); border: 1px solid var(--red-light); }
+
+/* Progress bar inline */
+.stock-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mini-bar {
+  flex: 1;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.mini-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s;
+}
+
+/* Queue section */
+.queue-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 700px) { .queue-grid { grid-template-columns: 1fr; } }
+
+.queue-card {
+  background: var(--parchment);
+  border: 1px solid var(--border-dark);
+  border-radius: 2px;
+  box-shadow: 2px 2px 0 var(--shadow);
+  overflow: hidden;
+}
+
+.queue-card-header {
+  background: var(--parchment2);
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.queue-card-title {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 2px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.queue-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  gap: 12px;
+}
+
+.queue-item:last-child { border-bottom: none; }
+
+.queue-name { flex: 1; color: var(--ink); }
+.queue-hours {
+  font-family: 'Inconsolata', monospace;
+  font-size: 12px;
+  color: var(--ink-dim);
+  white-space: nowrap;
+}
+
+.priority-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.priority-high { background: var(--red); }
+.priority-med { background: var(--gold); }
+.priority-low { background: var(--green); }
+
+/* Market day planner */
+.market-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 700px) { .market-grid { grid-template-columns: 1fr; } }
+
+.planner-card {
+  background: var(--parchment);
+  border: 1px solid var(--border-dark);
+  border-radius: 2px;
+  box-shadow: 2px 2px 0 var(--shadow);
+  overflow: hidden;
+}
+
+.planner-header {
+  background: var(--parchment2);
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.planner-title {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 2px;
+  font-weight: 600;
+  color: var(--red);
+  text-transform: uppercase;
+}
+
+.planner-body { padding: 20px; }
+
+.goal-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  gap: 12px;
+}
+
+.goal-label {
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--ink-dim);
+  flex: 1;
+}
+
+.goal-input {
+  background: white;
+  border: 1px solid var(--border);
+  font-family: 'Inconsolata', monospace;
+  font-size: 14px;
+  color: var(--ink);
+  padding: 6px 10px;
+  width: 100px;
+  outline: none;
+  text-align: right;
+  border-radius: 1px;
+}
+
+.goal-input:focus { border-color: var(--red); }
+
+.revenue-target {
+  background: var(--parchment2);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 16px;
+  text-align: center;
+  margin-top: 16px;
+}
+
+.revenue-label {
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--ink-dimmer);
+  margin-bottom: 6px;
+}
+
+.revenue-number {
+  font-family: 'Inconsolata', monospace;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--green);
+}
+
+.revenue-sub {
+  font-size: 11px;
+  color: var(--ink-dimmer);
+  margin-top: 4px;
+  font-style: italic;
+}
+
+/* Table layout visual */
+.table-layout {
+  background: white;
+  border: 2px dashed var(--border-dark);
+  border-radius: 4px;
+  padding: 20px;
+  position: relative;
+  min-height: 200px;
+}
+
+.table-layout-label {
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--ink-dimmer);
+  text-align: center;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.layout-zones {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.layout-zone {
+  background: var(--parchment);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 10px 8px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--ink-dim);
+  font-style: italic;
+}
+
+.layout-zone strong {
+  display: block;
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--ink);
+  font-style: normal;
+  margin-bottom: 4px;
+}
+
+/* Notes area */
+.notes-area {
+  width: 100%;
+  background: white;
+  border: 1px solid var(--border);
+  font-family: 'Lato', sans-serif;
+  font-size: 13px;
+  color: var(--ink);
+  padding: 12px;
+  resize: vertical;
+  min-height: 100px;
+  outline: none;
+  border-radius: 1px;
+  line-height: 1.6;
+}
+
+.notes-area:focus { border-color: var(--red); }
+
+/* Animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.tab-content.active > * {
+  animation: fadeIn 0.3s ease both;
+}
+
+.tab-content.active > *:nth-child(2) { animation-delay: 0.05s; }
+.tab-content.active > *:nth-child(3) { animation-delay: 0.1s; }
+
+/* Responsive table scroll */
+.table-scroll { overflow-x: auto; }
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: var(--ink-dimmer);
+  font-style: italic;
+  font-size: 14px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="header-rule"></div>
+    <h1>Market <span>Table</span></h1>
+    <div class="subtitle">Product Lineup &amp; Print Queue Tracker — Utah Farmers Market Edition</div>
+    <div class="header-rule-thin"></div>
+  </header>
+
+  <!-- Summary Bar -->
+  <div class="summary-bar">
+    <div class="summary-card">
+      <div class="summary-label">Total SKUs</div>
+      <div class="summary-value" id="sum-skus">0</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-label">Units Ready</div>
+      <div class="summary-value green" id="sum-ready">0</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-label">Queue Hours</div>
+      <div class="summary-value gold" id="sum-hours">0h</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-label">Est. Inventory Value</div>
+      <div class="summary-value green" id="sum-value">$0</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-label">Low Stock Alerts</div>
+      <div class="summary-value red" id="sum-alerts">0</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('lineup', this)">Product Lineup</button>
+    <button class="tab" onclick="switchTab('queue', this)">Print Queue</button>
+    <button class="tab" onclick="switchTab('market', this)">Market Day Planner</button>
+    <button class="tab" onclick="switchTab('notes', this)">Ideas &amp; Notes</button>
+  </div>
+
+  <!-- TAB: Lineup -->
+  <div id="tab-lineup" class="tab-content active">
+    <div class="table-wrap">
+      <div class="table-header">
+        <div class="table-title">⚔ Product Roster</div>
+        <button class="add-btn" onclick="addProduct()">+ Add Product</button>
+      </div>
+      <div class="table-scroll">
+        <table id="productTable">
+          <thead>
+            <tr>
+              <th>Product Name</th>
+              <th>Category</th>
+              <th>Colors</th>
+              <th>Price $</th>
+              <th>Cost $</th>
+              <th>In Stock</th>
+              <th>Target Stock</th>
+              <th>Status</th>
+              <th>Stock</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="productBody">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Queue -->
+  <div id="tab-queue" class="tab-content">
+    <div class="queue-grid">
+      <div class="queue-card">
+        <div class="queue-card-header">
+          <div class="queue-card-title">🖨 Active Print Queue</div>
+          <button class="add-btn" onclick="addQueueItem()">+ Add Job</button>
+        </div>
+        <div id="queueList">
+          <div class="empty-state">No jobs queued. Add a print job above.</div>
+        </div>
+      </div>
+
+      <div class="queue-card">
+        <div class="queue-card-header">
+          <div class="queue-card-title">📊 Queue Stats</div>
+        </div>
+        <div style="padding:20px;">
+          <div class="goal-row">
+            <div class="goal-label">Total Jobs</div>
+            <div style="font-family:'Inconsolata',monospace;font-size:18px;font-weight:700;" id="q-jobs">0</div>
+          </div>
+          <div class="goal-row">
+            <div class="goal-label">Total Print Hours</div>
+            <div style="font-family:'Inconsolata',monospace;font-size:18px;font-weight:700;color:var(--gold);" id="q-hours">0h</div>
+          </div>
+          <div class="goal-row">
+            <div class="goal-label">Est. Completion</div>
+            <div style="font-family:'Inconsolata',monospace;font-size:13px;color:var(--ink-dim);" id="q-days">—</div>
+          </div>
+          <div class="goal-row">
+            <div class="goal-label">High Priority Jobs</div>
+            <div style="font-family:'Inconsolata',monospace;font-size:18px;font-weight:700;color:var(--red);" id="q-priority">0</div>
+          </div>
+          <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">
+            <div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--ink-dimmer);margin-bottom:8px;">PRINTER HOURS / DAY</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input class="goal-input" type="number" id="printerHoursDay" value="18" min="1" max="24" oninput="updateQueue()" style="width:70px;">
+              <span style="font-size:12px;color:var(--ink-dim);">hrs running per day</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Market Day -->
+  <div id="tab-market" class="tab-content">
+    <div class="market-grid">
+      <div class="planner-card">
+        <div class="planner-header">
+          <div class="planner-title">📅 Market Day Goals</div>
+        </div>
+        <div class="planner-body">
+          <div class="goal-row">
+            <div class="goal-label">Revenue Target</div>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <span style="color:var(--ink-dim);font-family:'Inconsolata',monospace;">$</span>
+              <input class="goal-input" type="number" id="revenueGoal" value="300" oninput="updateMarket()">
+            </div>
+          </div>
+          <div class="goal-row">
+            <div class="goal-label">Booth Fee</div>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <span style="color:var(--ink-dim);font-family:'Inconsolata',monospace;">$</span>
+              <input class="goal-input" type="number" id="boothFeeM" value="35" oninput="updateMarket()">
+            </div>
+          </div>
+          <div class="goal-row">
+            <div class="goal-label">Avg. Transaction Value</div>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <span style="color:var(--ink-dim);font-family:'Inconsolata',monospace;">$</span>
+              <input class="goal-input" type="number" id="avgTransaction" value="18" oninput="updateMarket()">
+            </div>
+          </div>
+          <div class="goal-row">
+            <div class="goal-label">Market Hours</div>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <input class="goal-input" type="number" id="marketHours" value="5" oninput="updateMarket()">
+              <span style="font-size:11px;color:var(--ink-dim);">hrs</span>
+            </div>
+          </div>
+
+          <div class="revenue-target">
+            <div class="revenue-label">Net Revenue Target</div>
+            <div class="revenue-number" id="net-target">$265</div>
+            <div class="revenue-sub" id="market-sub">~17 transactions needed · $53/hr pace</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="planner-card">
+        <div class="planner-header">
+          <div class="planner-title">🗺 Table Layout</div>
+        </div>
+        <div class="planner-body">
+          <div class="table-layout">
+            <div class="table-layout-label">6ft Table — Front View</div>
+            <div class="layout-zones">
+              <div class="layout-zone">
+                <strong>Hero Display</strong>
+                Large centerpiece prints. Eye-catchers from 20ft away.
+              </div>
+              <div class="layout-zone">
+                <strong>Main Stock</strong>
+                Terrain sets, building models. Mid-price anchors.
+              </div>
+              <div class="layout-zone">
+                <strong>Grab & Go</strong>
+                Minis, tokens, scatter terrain. Sub-$15 impulse buys.
+              </div>
+            </div>
+            <div style="margin-top:8px;background:var(--parchment2);border:1px solid var(--border);border-radius:2px;padding:10px;text-align:center;font-size:11px;color:var(--ink-dim);font-style:italic;">
+              Sign with QR → Etsy / STL store + price tags on every item
+            </div>
+          </div>
+
+          <div style="margin-top:16px;">
+            <div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--ink-dimmer);margin-bottom:8px;">CHECKLIST</div>
+            <div id="checklist"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Notes -->
+  <div id="tab-notes" class="tab-content">
+    <div class="queue-grid">
+      <div class="queue-card">
+        <div class="queue-card-header">
+          <div class="queue-card-title">💡 Design Ideas</div>
+        </div>
+        <div style="padding:16px;">
+          <textarea class="notes-area" placeholder="Sketch ideas here — model concepts, themes, sets you want to design...
+e.g. — Modular dungeon wall system with corner pieces
+       — Warhammer-scale ruins for Mordheim
+       — Utah State Capitol architectural model
+       — Dragon skull scatter terrain set"></textarea>
+        </div>
+      </div>
+      <div class="queue-card">
+        <div class="queue-card-header">
+          <div class="queue-card-title">📦 Filament Inventory</div>
+        </div>
+        <div style="padding:16px;">
+          <textarea class="notes-area" placeholder="Track your CFS filament stock here...
+e.g. — Slot 1: Elegoo Grey PLA — ~600g remaining
+       — Slot 2: Sunlu Black PLA — ~800g remaining
+       — Slot 3: Sunlu Red PLA — ~300g ⚠ reorder soon
+       — Slot 4: eSun Gold PLA — ~450g remaining"></textarea>
+        </div>
+      </div>
+      <div class="queue-card">
+        <div class="queue-card-header">
+          <div class="queue-card-title">🎯 Market Research</div>
+        </div>
+        <div style="padding:16px;">
+          <textarea class="notes-area" placeholder="Notes from scouting Utah markets, competitor tables, pricing observations...
+e.g. — Sandy Farmers Market: 8am-1pm Saturdays, $35 booth
+       — Competitor selling PLA minis at $8ea, no multicolor
+       — DnD crowd heavy at Provo market
+       — Warhammer community: check local game stores"></textarea>
+        </div>
+      </div>
+      <div class="queue-card">
+        <div class="queue-card-header">
+          <div class="queue-card-title">🔗 Resources &amp; Links</div>
+        </div>
+        <div style="padding:16px;">
+          <textarea class="notes-area" placeholder="Useful links, references, communities...
+e.g. — MyMiniFactory: myminiFactory.com
+       — Thingiverse (inspiration only): thingiverse.com
+       — Blender shortcut reference: ...
+       — Utah tabletop Discord: ...
+       — Patreon STL creators to study: Artisan Guild, Dragon's Rest"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─── Data ───────────────────────────────────────────────
+let products = [
+  { id:1, name:'DnD Character Mini', category:'Mini', colors:2, price:14, cost:4.2, stock:8, target:15, status:'ready' },
+  { id:2, name:'Dungeon Door Set (x4)', category:'Terrain', colors:2, price:22, cost:6.8, stock:3, target:12, status:'low' },
+  { id:3, name:'Modular Stone Wall', category:'Terrain', colors:1, price:18, cost:5.1, stock:6, target:10, status:'ready' },
+  { id:4, name:'Warhammer Ruin (x5)', category:'Warhammer', colors:3, price:35, cost:11.2, stock:2, target:8, status:'printing' },
+  { id:5, name:'Dragon Skull Scatter', category:'Terrain', colors:2, price:28, cost:8.4, stock:0, target:6, status:'design' },
+];
+
+let queue = [
+  { id:1, name:'Warhammer Ruin (x5)', qty:6, hours:8, priority:'high' },
+  { id:2, name:'Dragon Skull Scatter', qty:6, hours:6, priority:'high' },
+  { id:3, name:'Dungeon Door Set', qty:9, hours:4, priority:'med' },
+  { id:4, name:'DnD Character Mini', qty:7, hours:3, priority:'low' },
+];
+
+let nextProdId = 10;
+let nextQueueId = 10;
+
+const CATEGORIES = ['Mini','Terrain','Warhammer','Architecture','Scatter','Token','Other'];
+const STATUSES = ['ready','printing','design','low'];
+const STATUS_LABELS = { ready:'Ready', printing:'Printing', design:'In Design', low:'Low Stock' };
+const STATUS_BADGE = { ready:'badge-ready', printing:'badge-printing', design:'badge-design', low:'badge-low' };
+
+// ─── Tab switching ───────────────────────────────────────
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ─── Render Products ─────────────────────────────────────
+function renderProducts() {
+  const tbody = document.getElementById('productBody');
+  if (products.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state">No products yet. Add your first item above.</div></td></tr>';
+    updateSummary();
+    return;
+  }
+
+  tbody.innerHTML = products.map(p => {
+    const margin = p.price > 0 ? Math.round((p.price - p.cost) / p.price * 100) : 0;
+    const stockPct = p.target > 0 ? Math.min(100, (p.stock / p.target) * 100) : 0;
+    const barColor = stockPct >= 60 ? '#4a7c2f' : stockPct >= 30 ? '#d4a017' : '#c0392b';
+    const autoStatus = p.stock === 0 ? 'design' : p.stock < p.target * 0.3 ? 'low' : p.status;
+
+    return `<tr>
+      <td><input type="text" value="${p.name}" onchange="updateProduct(${p.id},'name',this.value)" style="min-width:160px;"></td>
+      <td>
+        <select onchange="updateProduct(${p.id},'category',this.value)">
+          ${CATEGORIES.map(c => `<option ${c===p.category?'selected':''}>${c}</option>`).join('')}
+        </select>
+      </td>
+      <td><input type="number" value="${p.colors}" min="1" max="4" onchange="updateProduct(${p.id},'colors',+this.value)" style="width:50px;text-align:center;"></td>
+      <td><input type="number" value="${p.price}" min="0" step="0.5" onchange="updateProduct(${p.id},'price',+this.value)" style="width:70px;"></td>
+      <td><input type="number" value="${p.cost}" min="0" step="0.1" onchange="updateProduct(${p.id},'cost',+this.value)" style="width:70px;"></td>
+      <td><input type="number" value="${p.stock}" min="0" onchange="updateProduct(${p.id},'stock',+this.value)" style="width:60px;text-align:center;"></td>
+      <td><input type="number" value="${p.target}" min="0" onchange="updateProduct(${p.id},'target',+this.value)" style="width:60px;text-align:center;"></td>
+      <td>
+        <select onchange="updateProduct(${p.id},'status',this.value)">
+          ${STATUSES.map(s => `<option value="${s}" ${s===p.status?'selected':''}>${STATUS_LABELS[s]}</option>`).join('')}
+        </select>
+      </td>
+      <td style="min-width:90px;">
+        <div class="stock-bar">
+          <div class="mini-bar"><div class="mini-fill" style="width:${stockPct}%;background:${barColor};"></div></div>
+          <span style="font-family:'Inconsolata',monospace;font-size:11px;color:var(--ink-dim);white-space:nowrap;">${p.stock}/${p.target}</span>
+        </div>
+      </td>
+      <td><button class="delete-btn" onclick="deleteProduct(${p.id})">×</button></td>
+    </tr>`;
+  }).join('');
+
+  updateSummary();
+}
+
+function addProduct() {
+  products.push({
+    id: nextProdId++,
+    name: 'New Product',
+    category: 'Mini',
+    colors: 1,
+    price: 12,
+    cost: 3.5,
+    stock: 0,
+    target: 10,
+    status: 'design'
+  });
+  renderProducts();
+}
+
+function deleteProduct(id) {
+  products = products.filter(p => p.id !== id);
+  renderProducts();
+}
+
+function updateProduct(id, field, value) {
+  const p = products.find(p => p.id === id);
+  if (p) { p[field] = value; updateSummary(); }
+}
+
+// ─── Summary ─────────────────────────────────────────────
+function updateSummary() {
+  const totalReady = products.reduce((s,p) => s + p.stock, 0);
+  const totalValue = products.reduce((s,p) => s + p.stock * p.price, 0);
+  const lowAlerts = products.filter(p => p.stock < p.target * 0.3).length;
+  const queueHours = queue.reduce((s,q) => s + q.hours * q.qty, 0);
+
+  document.getElementById('sum-skus').textContent = products.length;
+  document.getElementById('sum-ready').textContent = totalReady;
+  document.getElementById('sum-hours').textContent = queueHours + 'h';
+  document.getElementById('sum-value').textContent = '$' + Math.round(totalValue);
+  document.getElementById('sum-alerts').textContent = lowAlerts;
+}
+
+// ─── Queue ───────────────────────────────────────────────
+function renderQueue() {
+  const list = document.getElementById('queueList');
+  if (queue.length === 0) {
+    list.innerHTML = '<div class="empty-state">No jobs queued.</div>';
+    updateQueue();
+    return;
+  }
+
+  list.innerHTML = queue.map(q => `
+    <div class="queue-item">
+      <div class="priority-dot priority-${q.priority}"></div>
+      <div class="queue-name">${q.name} <span style="color:var(--ink-dimmer);font-size:11px;">×${q.qty}</span></div>
+      <div class="queue-hours">${q.hours}h ea · ${q.hours * q.qty}h total</div>
+      <select onchange="updateQueueItem(${q.id},'priority',this.value)" style="background:white;border:1px solid var(--border);font-size:11px;padding:3px 6px;border-radius:1px;color:var(--ink);outline:none;font-family:'Lato',sans-serif;">
+        <option value="high" ${q.priority==='high'?'selected':''}>High</option>
+        <option value="med" ${q.priority==='med'?'selected':''}>Med</option>
+        <option value="low" ${q.priority==='low'?'selected':''}>Low</option>
+      </select>
+      <button class="delete-btn" onclick="deleteQueueItem(${q.id})">×</button>
+    </div>
+  `).join('');
+
+  updateQueue();
+}
+
+function addQueueItem() {
+  const name = prompt('Print job name:');
+  if (!name) return;
+  const hrs = parseFloat(prompt('Hours per unit:', '4')) || 4;
+  const qty = parseInt(prompt('How many units:', '5')) || 5;
+  queue.push({ id: nextQueueId++, name, qty, hours: hrs, priority: 'med' });
+  renderQueue();
+  updateSummary();
+}
+
+function deleteQueueItem(id) {
+  queue = queue.filter(q => q.id !== id);
+  renderQueue();
+  updateSummary();
+}
+
+function updateQueueItem(id, field, value) {
+  const q = queue.find(q => q.id === id);
+  if (q) { q[field] = value; updateQueue(); }
+}
+
+function updateQueue() {
+  const totalHours = queue.reduce((s,q) => s + q.hours * q.qty, 0);
+  const highPri = queue.filter(q => q.priority === 'high').length;
+  const hrsPerDay = parseFloat(document.getElementById('printerHoursDay').value) || 18;
+  const days = totalHours > 0 ? Math.ceil(totalHours / hrsPerDay) : 0;
+
+  document.getElementById('q-jobs').textContent = queue.length;
+  document.getElementById('q-hours').textContent = totalHours + 'h';
+  document.getElementById('q-priority').textContent = highPri;
+  document.getElementById('q-days').textContent = days > 0
+    ? days + ' day' + (days > 1 ? 's' : '') + ' at ' + hrsPerDay + 'h/day'
+    : 'Queue empty';
+
+  document.getElementById('sum-hours').textContent = totalHours + 'h';
+}
+
+// ─── Market Day ──────────────────────────────────────────
+function updateMarket() {
+  const goal = parseFloat(document.getElementById('revenueGoal').value) || 0;
+  const booth = parseFloat(document.getElementById('boothFeeM').value) || 0;
+  const avg = parseFloat(document.getElementById('avgTransaction').value) || 1;
+  const hours = parseFloat(document.getElementById('marketHours').value) || 1;
+
+  const net = goal - booth;
+  const transactions = Math.ceil(goal / avg);
+  const pace = (net / hours).toFixed(0);
+
+  document.getElementById('net-target').textContent = '$' + Math.max(0, net).toFixed(0);
+  document.getElementById('market-sub').textContent =
+    `~${transactions} transactions needed · $${pace}/hr pace`;
+}
+
+// ─── Checklist ───────────────────────────────────────────
+const CHECKLIST_ITEMS = [
+  'Prints cleaned & supports removed',
+  'Price tags on every item',
+  'QR code sign → Etsy/STL store',
+  'Cash float ($40 in small bills)',
+  'Card reader charged (Square/Venmo)',
+  'Display risers & stands packed',
+  'Table cover (6ft)',
+  'Phone mount for Creality app',
+  'Business cards / flyers',
+  'Backup inventory list on phone',
+];
+
+function renderChecklist() {
+  document.getElementById('checklist').innerHTML = CHECKLIST_ITEMS.map((item, i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);">
+      <input type="checkbox" id="chk-${i}" style="accent-color:var(--red);width:14px;height:14px;cursor:pointer;">
+      <label for="chk-${i}" style="font-size:12px;color:var(--ink-dim);cursor:pointer;flex:1;">${item}</label>
+    </div>
+  `).join('');
+}
+
+// ─── Init ────────────────────────────────────────────────
+renderProducts();
+renderQueue();
+renderChecklist();
+updateMarket();
+</script>
+</body>
+</html>
